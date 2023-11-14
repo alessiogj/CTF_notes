@@ -99,4 +99,76 @@
 \maketitle
 \tableofcontents
 \chapter{Introduzione}
+
+\chapter{Software Security}
+\section{Introduzione}
+I numeri interi, in questo caso int32, possono essere rappresentati in due maniera, Big-Endian(cifra significativa a sinistra) e Little-Endian(cifra significativa a destra).
+\section{Assembly x86\_64}
+Ogni istruzione assembly ha degli operandi(registri) e un'operazione.\\
+La notazione per architetture intel è del tipo \textless op\textgreater\textless destinazione\textgreater\textless sorgente\textgreater, i registri hanno la seguente struttura:
+AH,AL -> 8 bit, AX -> 16 bit, EAX -> 32 bit, RAX -> 64 bit.\\
+Tra le operazioni di base che troviamo ci sono: \\
+MOV \textless dst\textgreater\textless src\textgreater\\
+PUSH \textless src\textgreater or POP\textless src\textgreater\\
+ADD or SUB \textless dst\textgreater\textless src\textgreater\\
+CALL \textless pc\textgreater or RET\\
+Tra i salti condizionali invece abbiamo:
+CMP \textless opn1\textgreater\textless opn2\textgreater -> confronta due valori e imposta delle flag\\
+J \textless condizione\textgreater\textless pc\textgreater -> salta a PC se le flag soddisfano la condizione\\
+\section{Buffer Overflow}
+Consideriamo di aver dichiarato in c un'istruzione del tipo "char name[100];", cosa succede se l'utente ha un nome che supera i 100 caratteri?.
+Può succedere che con scanf() andiamo a scrivere caratteri oltre la fine di name, andando a sovrascrivere la memoria che lo segue, generando quindi un buffer overflow che va a corrompere la memoria, ossia scriviamo dati in posizioni che il programmatore non aveva previsto fossero modificate.\\
+Se corrompiamo abbastanza bene la memoria possiamo addirittura prendere il controllo del processo(arbitrary code execution).
+\subsection{Accessi out of bound}
+Se abbiamo una struct che dichiara un int a[2] e un int b[3], nel momento in cui scrivo in a[2] o in b[0] non cambia niente, sono equivalenti.
+\section{Reverse Engineering}
+\subsection{Binary}
+Gli eseguibili nativi sono file che contengono codice macchina eseguibile dal processore, contengono anche informazioni usate dal sistema operativo per caricarlo in memoria.\\
+Il formato \textbf{elf} è flessibile e serve a rappresentare i file binari, in linux è usato per rappresentare eseguibili e librerie condivise, ad alto livello invece risulta come un insieme di strutture che descrivono come caricare in memoria i dati salvati nello stessso file.\\
+Per analizzare file ELF abbiamo alcuni strumenti tra cui:
+\begin{itemize}
+  \item \textbf{readelf}: stampa le informazioni contenute nei file elf
+  \item textbf{nm}: stampa tutti i simboli contenuti nel file elf
+\item textbf{objdump}: stampa le informazioni contenute nel file oggetto, è più specifico rispetto a readelf
+\item textbf{lld}: stampa gli oggetti condivisi necessari all'esecuzione del programma
+\item textbf{lief}: libreria python per analizzare e modificare file elf.
+\end{itemize}
+
+\subsection{Memoria a basso livello}
+Se vogliamo considerare un'astrazione della memoria troviamo vari livelli:
+ \begin{itemize}
+  \item \textbf{dati tipati}: byte interpretati
+  \item linguaggi di programmazione
+\item textbf{memoria virtuale}: sequenza di byte indirizzabili, spazio indipendente per processo, solo alcune aree mappate(con la fisica)
+\item sistema operativo
+\item textbf{memoria fisica}: sequenza di byte indirizzabili
+\end{itemize}
+
+\subsection{Spazio virtuale linux user space}
+
+ \begin{itemize}
+  \item Text
+  \item Data -> dati globali inizializzati
+\item BSS -> dati globali azzerati
+\item Heap -> allocazioni dinamiche
+\item Librerie -> binari librerie dinamiche
+\item Stack -> var locali, record di attivazione
+\end{itemize}
+
+\subsection{metodologie di base di reverse}
+Tool per analisi statica: Ghidra, IDA, Binary Ninja, Radare2 -> analizzano qualsiasi binario in input\\
+\begin{itemize}
+\item JADX: reverse bytecode java
+\item dnSpy, ILSpy: reverse bytecode .NET
+\item uncompyle6/unpyc: reverse bytecode python
+\item Iuadec: reverse bytecode LUA.
+\end{itemize}
+Tool per analisi dinamica:
+\begin{itemize}
+\item gdb: da usare con GEF o PWNDBG
+\item radare2 integra features comode per il reversing
+\item rr timeless debugging
+\item frida inietta codice js in qualsiasi punto del programma
+\item ida debugger debugger gui disponibile free.
+\end{itemize}
 \end{document}
