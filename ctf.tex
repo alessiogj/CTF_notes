@@ -89,9 +89,9 @@
     \tikz[baseline=-0.6ex] \node [#1]{#2};}%
 %%======================================================================
 \title{Capture the Flag Manual}
-\author{\textit{Alessio Gjergji}\\
-\textit{Author 2} \\
-\textit{Author 3} \\
+\author{\textit{Alessio Gjergji}}\\
+\textit{\textit{Nicolò Piccoli}} \\
+\textit{\textit{Davide Rossignolo}} \\
 \textit{Author 4} \\
 \textit{Author 5}}
 \date{}
@@ -100,7 +100,7 @@
 \tableofcontents
 \chapter{Introduzione}
 
-\chapter{Software Security}
+\chapter{Software Security OlyCyber}
 \section{Introduzione}
 I numeri interi, in questo caso int32, possono essere rappresentati in due maniera, Big-Endian(cifra significativa a sinistra) e Little-Endian(cifra significativa a destra).
 \section{Assembly x86\_64}
@@ -171,4 +171,35 @@ Tool per analisi dinamica:
 \item frida inietta codice js in qualsiasi punto del programma
 \item ida debugger debugger gui disponibile free.
 \end{itemize}
+
+\chapter{Sw Sec Lab Univr}
+\section{Elf File}
+È il file standard per gli eseguibili Unix, Elf sta per Executable and Linkable Format, è essenzialmente un file binario che continene varie informazioni tra cui:
+\begin{itemize}
+	\item \texbf{header}: descrive il contenuto del file per l'esecuzione
+	\item \texbf{Pht(program header table)}: da informazioni su come si crea l'immagine del processo
+	\item \texbf{Sequenza di sezioni}: contengono ciò che serve per il linking
+	\item \texbf{Section header table}: descrizione delle sezioni precedenti 
+\end{itemize}
+Per windows l'equivalente è PE, per mac Mach-O
+\section{Memoria}
+\subsection{Storage Size}
+WORD = 2 BYTES, DWORD = 4 BYTES, QUADWORD = 8 BYTES.
+La cifra più significativa è a sinistra, quella meno è a destra.
+\subsection{Hexadecimal}
+Si usa come forma compatta dei numeri binari, si va da 0 a 9 e da A a F.\\
+Ogni digit in hex rappresenta 4 bits, quindi 2 digit un bytes, in C sono scritti come 0X FA 1D .... .
+\subsection{Registri x86_32}
+Ha registri general purpose a 32 bit.\\
+Sono strutturati nella seguente maniera: AH,AL 8 bit ciascuno, AX 16 bit, EAX 32 bit.\\
+EAX è storicamente usato come accumulatore, ECX come counter, inoltre ci sono ESP(stack pointer) e EBP(base pointer).\\
+Se passiamo a x86_64 si aggiungono i registri a 64 bit che si nominano del tipo: RAX.
+\subsection{x86 Memory managment}
+La memoria è semplicemente una sequenza di bytes, ognuno con un indirizzo unico, i compilatori potrebbero introdurre padding per cambiare l'ordine dei dati per ottimizzare, per questo motivo ci torna comodo vederla come una matrice di tot righe con n bytes(n=processor word), se sono a 64 bit n=8.\\
+Un indirizzo è una locazione in memoria, un \textbf{puntatore} è un oggetto mantiene un indirizzo.
+I bytes possono essere ordinati in memoria in due maniere:
+\begin{itemize}
+\item \texbf{BigEndian}: il bytes meno significativo ha indirizzo più alto
+\item \texbf{LittleEndian}: il bytes meno significativo ha indirizzo più basso
+\end{itemize}  
 \end{document}

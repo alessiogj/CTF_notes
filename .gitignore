@@ -14,3 +14,4 @@ init_latex.py
 
 # Mantieni la cartella img e il suo percorso completo
 !/**/img/
+*.pdf
