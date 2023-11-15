@@ -89,9 +89,10 @@
     \tikz[baseline=-0.6ex] \node [#1]{#2};}%
 %%======================================================================
 \title{Capture the Flag Manual}
-\author{\textit{Alessio Gjergji}}\\
-\textit{\textit{Nicolò Piccoli}} \\
-\textit{\textit{Davide Rossignolo}} \\
+\author{
+\textit{Alessio Gjergji}\\
+\textit{Nicolò Piccoli} \\
+\textit{Davide Rossignolo} \\
 \textit{Author 4} \\
 \textit{Author 5}}
 \date{}
@@ -176,10 +177,10 @@ Tool per analisi dinamica:
 \section{Elf File}
 È il file standard per gli eseguibili Unix, Elf sta per Executable and Linkable Format, è essenzialmente un file binario che continene varie informazioni tra cui:
 \begin{itemize}
-	\item \texbf{header}: descrive il contenuto del file per l'esecuzione
-	\item \texbf{Pht(program header table)}: da informazioni su come si crea l'immagine del processo
-	\item \texbf{Sequenza di sezioni}: contengono ciò che serve per il linking
-	\item \texbf{Section header table}: descrizione delle sezioni precedenti 
+	\item \textbf{header}: descrive il contenuto del file per l'esecuzione
+	\item \textbf{Pht(program header table)}: da informazioni su come si crea l'immagine del processo
+	\item \textbf{Sequenza di sezioni}: contengono ciò che serve per il linking
+	\item \textbf{Section header table}: descrizione delle sezioni precedenti 
 \end{itemize}
 Per windows l'equivalente è PE, per mac Mach-O
 \section{Memoria}
@@ -189,17 +190,67 @@ La cifra più significativa è a sinistra, quella meno è a destra.
 \subsection{Hexadecimal}
 Si usa come forma compatta dei numeri binari, si va da 0 a 9 e da A a F.\\
 Ogni digit in hex rappresenta 4 bits, quindi 2 digit un bytes, in C sono scritti come 0X FA 1D .... .
-\subsection{Registri x86_32}
+\subsection{Registri x86\_32}
 Ha registri general purpose a 32 bit.\\
 Sono strutturati nella seguente maniera: AH,AL 8 bit ciascuno, AX 16 bit, EAX 32 bit.\\
 EAX è storicamente usato come accumulatore, ECX come counter, inoltre ci sono ESP(stack pointer) e EBP(base pointer).\\
-Se passiamo a x86_64 si aggiungono i registri a 64 bit che si nominano del tipo: RAX.
+Se passiamo a x86\_64 si aggiungono i registri a 64 bit che si nominano del tipo: RAX.
 \subsection{x86 Memory managment}
 La memoria è semplicemente una sequenza di bytes, ognuno con un indirizzo unico, i compilatori potrebbero introdurre padding per cambiare l'ordine dei dati per ottimizzare, per questo motivo ci torna comodo vederla come una matrice di tot righe con n bytes(n=processor word), se sono a 64 bit n=8.\\
 Un indirizzo è una locazione in memoria, un \textbf{puntatore} è un oggetto mantiene un indirizzo.
 I bytes possono essere ordinati in memoria in due maniere:
 \begin{itemize}
-\item \texbf{BigEndian}: il bytes meno significativo ha indirizzo più alto
-\item \texbf{LittleEndian}: il bytes meno significativo ha indirizzo più basso
-\end{itemize}  
+\item \textbf{BigEndian}: il bytes meno significativo ha indirizzo più alto
+\item \textbf{LittleEndian}: il bytes meno significativo ha indirizzo più basso
+\end{itemize}
+\section{intel x86 instruction set}
+La notazione per architetture intel è del tipo \textless op\textgreater\textless destinazione\textgreater\textless sorgente\textgreater\\
+Vediamo ora alcune istruzioni:
+\begin{itemize}
+\item mov: muove dati da un src a un registro dst
+\item push: mette l'operando sullo stack
+\item pop: rimuove l'operando dallo stack
+\item lea: carica ciò che c'è all'indirizzo [] in dst
+\item add: fa la somma e salva in op1
+\item sub: fa la differenza e salva in op1
+\item inc: incrementa di 1
+\item and/or/xor: fa l'operazione e salva in op1
+\item jump: salto non condizionale a label
+\item cmp: compara contenuto di op1 con op2
+\item je/jne/jz/jg/jge/jl/jle: in base a cmp fa salto condionale 
+\item call: usato per chiamare funzioni
+\item ret: implementa il ritorno da funzione
+\end{itemize}
+Per quanto riguarda lo stack, questo è formato da degli stack frames, uno per ogni funzione chiamata, \textbf{stack pointer} punta all'ultimo elemento nello stack(il primo inserito).\\
+Per quanto riguarda ogni singolo frame, abbiamo che \textbf{base pointer(frame pointer)} punta l'indirizzo dal quale partono le variabili locali.
+\section{Debugging con GDB}
+Posso usare gdb in varie maniere:
+\begin{itemize}
+\item gdb \textgreater program \textless
+\item gdb \textgreater program \textless \textgreater pid \textless 
+\item gdb  -p \textgreater pid \textless
+\end{itemize}
+
+\subsection{Comandi di GDB}
+\begin{itemize}
+\item run: fa partire il programma in gdb
+\item set args: imposta gli argomenti del programma
+\item show args: mostra gli argomenti del programma
+\item help: comandi disponibili
+\item break: mette breakpoint alla prossima istruzione
+\item break location: mette un breakpoint alla locazione location(preceduta da *)
+\item break [location] if \textgreater condition \textless: mette un breakpoint data una condizione
+\item continue(c): va al prossimo breakpoint(se esiste)
+\item nexti(ni): esegue solo un'istruzione
+\item frame [\textgreater selection \textless]: stampa una descrizione dello stack frame selezionato
+\item info frame [\textgreater selection \textless]: stampa una descrizione più informativa rispetto a frame
+\item disas: disassembla una funzione
+\item print(p): stampa il contenuto di un indirizzo o registro(*0x092a3e or \$eax)  
+\item x: non ho ben capito
+\item call: chiama una funzione 
+\item set: modifica il valore di una locazione di memoria o di un registro
+
+\end{itemize}
+
+
 \end{document}
