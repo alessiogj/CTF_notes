@@ -98,5 +98,128 @@
 \begin{document}
 \maketitle
 \tableofcontents
-\chapter{Introduzione}
+\chapter{Comandi terminale}
+\section{Introduzione}
+Durante una ctf potremmo trovarci di fronte ad alcune challenge in cui è necessario l'utilizzo di vari comandi della shell per recuperare la flag richiesta e quindi passare alla challenge successiva.
+Di seguito vedremo alcuni comandi della shell per sistemi UNIX o macOS che possono tornare utili.
+
+\section{Comandi di base}
+Se si conosce un comando ma non si sa come utilizzarlo è bene consultare il manuale scrivendo sul terminale \textbf{man} $\langle command \rangle$. Se non è presente la pagina del manuale provare a specificare il flag \textbf{--help}. 
+
+\section{Operazioni sulle directory}
+\subsection{cd}
+Per navigare attraverso il filesystem utilizziamo il comando \textbf{cd dir}.
+\begin{itemize}
+    \item \textbf{cd esempio} (ci spostiamo nella cartella \textit{esempio})
+    \item \textbf{cd Dekstop/esempio} (ci spostiamo nella cartella \textit{esempio} identificata dal suo path)
+    \item \textbf{cd ..} (ci permette di spostarci nella cartella superiore)
+    \item \textbf{cd $\sim$} (ci spostiamo nella home directory)
+    \item \textbf{cd /} (ci spostiamo nella root directory)
+\end{itemize}
+Per creare una cartella utilizziamo il comando \textbf{mk dir}, se invece vogliamo vedere la cartella corrente utlizziamo il comando \textbf{pwd}.
+
+\subsection{ls}
+Se vogliamo vedere i file all'interno di una cartella utilizziamo il comando \textbf{ls}.
+\begin{itemize}
+    \item \textbf{ls} (mostra i file nella cartella corrente)
+    \item \textbf{ls Desktop/esempio} (mostra i file all'interno della cartella \textit{esempio} identificata dal path)
+\end{itemize}
+Tra le opzioni del comando \textbf{ls} possiamo trovare:
+\begin{itemize}
+    \item \textbf{-a} (mostra tutti i file, inclusi quelli nascosti)
+    \item \textbf{-r} (inverte l'ordine della lista)
+    \item \textbf{-t} (ordina in base all'ultimo modificato)
+    \item \textbf{-S} (ordina per dimensione del file)
+\end{itemize}
+
+\section{Operazioni sui file}
+\subsection{touch}
+Per creare un file utilizzare il comando \textbf{touch file}.
+
+\subsection{cat}
+Il comando \textbf{cat} permette di concatenare file e stampare il loro contenuto sullo standard output.
+\begin{itemize}
+    \item \textbf{cat file} (stampa il contenuto del file, se vengono specificati più file li concatena e stampa il contenuto, e.g. cat file file2)
+    \item \textbf{cat $<$ -file} (permette di stampare il contenuto di un file con il nome che inizia con un dash)
+    \item \textbf{cat "nome file con spazi"} (permette di stampare il contenuto di un file che contiene spazi nel nome)
+    \item \textbf{cat .file} (stampa il contenuto del file nascosto)
+\end{itemize}
+
+\subsection{cp, mv, rm, file}
+\begin{itemize}
+    \item \textbf{cp file file2} (copia file in file2)
+    \item \textbf{mv file file2} (rinomino file in file2)
+    \item \textbf{rm file} (elimino file)
+        \begin{itemize}
+            \item \textbf{rm -r} (rimuovo le directory e i loro contenuti)
+            \item \textbf{rm -d} (rimuovo direcotry vuote)
+        \end{itemize}
+    \item \textbf{file file1} (ritorna il tipo di file1)
+\end{itemize}
+
+\subsection{head, tail}
+\begin{itemize}
+    \item \textbf{head file1} (ritorna le prime 10 linee di file1)
+    \item \textbf{tail file1} (ritorna le ultime 10 linee di file1)
+\end{itemize}
+
+\subsection{strings}
+Il comando \textbf{strings} stampa una sequenza di stringhe leggibili all'interno di un file.
+\begin{itemize}
+    \item \textbf{strings file}
+    \begin{itemize}
+        \item con il flag \textbf{-n number-of-lines} (specifichiamo la lunghezza minima delle stringhe)
+        \item con il flag \textbf{-e encoding} (specifichiamo la codifica)
+        \item con il flag \textbf{-w} (includiamo gli spazi bianchi)
+        \item con il flag \textbf{-s} (il separatore per l'output)
+    \end{itemize}
+\end{itemize}
+
+\section{Ricerca}
+\subsection{sort, unique}
+Il comando \textbf{sort file} permette di ordinare le linee all'interno di un file, il comando \textbf{unique -u} permette di mostrare le linee uniche non duplicate, questi due comandi possono essere comodi da usare in combinazione attraverso l'utilizzo di una pipe: \textbf{sort nomefile | unique -u}.
+
+\subsection{grep}
+Il comando \textbf{grep pattern files} permette di cercare un determinato pattern in ogni file, i pattern andrebbero specificati sempre compresi tra doppi apici.
+
+\begin{itemize}
+    \item \textbf{grep -i } (ricerca case-insensitive)
+    \item \textbf{grep -r } (ricerca ricorsiva)
+    \item \textbf{grep -v } (ricerca invertita)
+    \item \textbf{grep -o } (mostra solo la parte di file che ha matchato il pattern)
+\end{itemize}
+
+\subsection{find}
+Il comando \textbf{find} permette di cercare dei file all'interno del filesystem.
+
+\begin{itemize}
+    \item \textbf{find /percorso -name "filename"} (ricerca per nome)
+    \item \textbf{find /percorso -name "*.txt"} (ricerca per estensione)
+    \item \textbf{find /percorso -type f -size +1M} (ricerca per dimensione)
+    \item \textbf{find /percorso -user utente -group gruppo} (ricerca per proprietario e gruppo)
+    \item \textbf{find /percorso -mtime -7} (ricerca per data di modifica)
+\end{itemize}
+
+\section{Connessioni ssh o tcp}
+Connessione ad una risorsa in ssh:
+
+\begin{itemize}
+    \item \textbf{ssh -p numero-porta utente@indirizzo-del-server}
+\end{itemize}
+
+Connessione tramite tcp:
+
+\begin{itemize}
+    \item \textbf{nc host port}
+\end{itemize}
+
+\section{Gestione dei processi}
+\begin{itemize}
+    \item \textbf{ps} (mostra uno snapshot dei processi)
+    \item \textbf{top} (mostra i processi real-time)\item \textbf{}
+    \item \textbf{kill pid} (termina un processo con il pid=pid)
+    \item \textbf{pkill name} (termina un processo col nome=name)
+    \item \textbf{killall name} (termina tutti i processi con il nome che inizia per name)
+\end{itemize}
+
 \end{document}
