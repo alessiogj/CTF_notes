@@ -1,0 +1,313 @@
+\chapter{Crittografia}
+\section{Conversioni}
+\subsection{Decodifica da numero in base 2 a big endian}
+\begin{lstlisting}[style=pythonStyle]
+    result = '101010'
+    result = int(result, 2).to_bytes((result.bit_length() + 7) // 8, 'big').decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 2 a little endian}
+\begin{lstlisting}[style=pythonStyle]
+    result = '101010'
+    result = int(result, 2).to_bytes((result.bit_length() + 7) // 8, 'little').decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 8 a big endian}
+\begin{lstlisting}[style=pythonStyle]
+    result = '1234'
+    result = int(result, 8).to_bytes((result.bit_length() + 7) // 8, 'big').decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 8 a little endian}
+\begin{lstlisting}[style=pythonStyle]
+    result = '1234'
+    result = int(result, 8).to_bytes((result.bit_length() + 7) // 8, 'little').decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 10 a big endian}
+\begin{lstlisting}[style=pythonStyle]
+    result = 1234
+    result = result.to_bytes((result.bit_length() + 7) // 8, 'big').decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 10 a little endian}
+\begin{lstlisting}[style=pythonStyle]
+    result = 1234
+    result = result.to_bytes((result.bit_length() + 7) // 8, 'little').decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 16 a big endian}
+\begin{lstlisting}[style=pythonStyle]
+    result = '1234'
+    result = bytes.fromhex(result).decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 16 a little endian}
+\begin{lstlisting}[style=pythonStyle]
+    result = '1234'
+    result = bytes.fromhex(result)[::-1].decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 32 a big endian}
+\begin{lstlisting}[style=pythonStyle]
+    import base64
+
+    result = '1234'
+    result = base64.b32decode(result).decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 32 a little endian}
+\begin{lstlisting}[style=pythonStyle]
+    import base64
+
+    result = '1234'
+    result = base64.b32decode(result)[::-1].decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 58 a big endian}
+\begin{lstlisting}[style=pythonStyle]
+    import base58
+
+    result = '1234'
+    result = base58.b58decode(result).decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 58 a little endian}
+\begin{lstlisting}[style=pythonStyle]
+    import base58
+
+    result = '1234'
+    result = base58.b58decode(result)[::-1].decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 64 a big endian}
+\begin{lstlisting}[style=pythonStyle]
+    import base64
+
+    result = '1234'
+    result = base64.b64decode(result).decode('utf-8')
+\end{lstlisting}
+\subsection{Decodifica da numero in base 64 a little endian}
+\begin{lstlisting}[style=pythonStyle]
+    import base64
+
+    result = '1234'
+    result = base64.b64decode(result)[::-1].decode('utf-8')
+\end{lstlisting}
+\section{One-Time Pad}
+Un dettaglio fondamentale per ottenere sicurezza perfetta è che la chiave sia lunga tanto quanto il messaggio.
+
+Nel caso in cui la chiave sia molto corta (\textit{e ripetuta, per esempio})
+potrebbe essere possibile un attacco a forza bruta: provare tutte le chiavi
+candidate e vedere per quale si ottiene un risultato sensato.
+La ripetizione di pattern all'interno del messaggio cifrato è un indizio
+che la chiave sia corta.
+\begin{lstlisting}[style=pythonStyle]
+    def xor(a, b):
+        return bytes([x^y for x,y in zip(a,b)])
+
+    num = bytes.fromhex('104e137f42')
+
+    for i in range(256):
+        key = i.to_bytes(1, 'big')*len(num)
+        result = xor(num, key)
+        if result.isascii():
+            result = result.decode('ascii')
+            print('key: ', i, 'result: ', result)
+
+\end{lstlisting}
+Nel caso descritto la chiave è di un solo byte, quindi si prova a cifrare
+il messaggio con tutte le chiavi possibili e si controlla se il risultato
+è un testo \texttt{ASCII}.
+\section{Crittoanalisi differenziale}
+Per utilizzare la crittoanalisi differenziale è necessario avere a disposizione
+un \textit{oracolo} che cifri un messaggio arbitrario con una chiave segreta.
+Installando il tool \texttt{MTP} possiamo ottenere una parziale implementazione
+del messaggio.
+
+\begin{lstlisting}[style=bashStyle]
+    $ pip3 install mtp
+    $ mtp <file>
+\end{lstlisting}
+\section{Libreria \texttt{PyCryptodome}}
+\subsection{\texttt{DES}}
+\begin{lstlisting}[style=pythonStyle]
+    from Crypto.Cipher import DES
+    from Crypto.Util.Padding import pad
+    from Crypto.Random import get_random_bytes
+    from binascii import hexlify, unhexlify
+
+    # Chiave in formato esadecimale
+    key_hex = '1bb4545801ca1e93'
+    key = unhexlify(key_hex)
+
+    # Testo in chiaro
+    plaintext = 'La lunghezza di questa frase non e divisibile per 8'
+
+    # Applicare lo schema di riempimento x923
+    plaintext = pad(plaintext.encode('utf-8'), DES.block_size, style='x923')
+
+    # Generare un vettore di inizializzazione casuale
+    iv = get_random_bytes(DES.block_size)
+
+    # stampo Che IV hai utilizzato (in esadecimale)
+    print('IV: ' + hexlify(iv).decode('utf-8') + '\n')
+
+    # Creare un oggetto DES in modalita' CBC
+    cipher = DES.new(key, DES.MODE_CBC, iv)
+
+    # Cifrare il testo in chiaro
+    ciphertext = cipher.encrypt(plaintext)
+
+    # Stampare il testo cifrato in formato esadecimale
+    print("Text: " + hexlify(ciphertext).decode('utf-8') + "\n")
+\end{lstlisting}
+
+\subsection{\texttt{AES}}
+
+\begin{lstlisting}[style=pythonStyle]
+    from Crypto.Cipher import AES
+    from Crypto.Util.Padding import pad
+    from Crypto.Random import get_random_bytes
+    from binascii import hexlify, unhexlify
+
+    # Generare una chiave casuale AES256 in formato esadecimale
+    key = get_random_bytes(32)  # 32 byte per AES256
+
+    # Testo in chiaro
+    plaintext = 'Mi chiedo cosa significhi il numero nel nome di questo algoritmo.'
+
+    # Applicare lo schema di riempimento PKCS7
+    plaintext = pad(plaintext.encode('utf-8'), AES.block_size)
+
+    # Generare un vettore di inizializzazione casuale
+    iv = get_random_bytes(AES.block_size)
+
+    # Stampo che IV hai utilizzato (in esadecimale)
+    print("IV:", hexlify(iv).decode('utf-8'))
+
+    # Creare un oggetto AES in modalita' CFB con segment size di 24
+    cipher = AES.new(key, AES.MODE_CFB, iv, segment_size=24)
+
+    # Cifrare il testo in chiaro
+    ciphertext = cipher.encrypt(plaintext)
+
+    # Stampare la chiave in formato esadecimale
+    print("Chiave:", hexlify(key).decode('utf-8'))
+
+    # Stampare il testo cifrato in formato esadecimale
+    print("Testo cifrato:", hexlify(ciphertext).decode('utf-8'))
+\end{lstlisting}
+\subsection{Stream cipher}
+\begin{lstlisting}[style = pythonStyle]
+    from Crypto.Cipher import ChaCha20
+    from binascii import unhexlify
+
+    # Chiave in formato esadecimale
+    key_hex = '9d6a8f...'
+    key = unhexlify(key_hex)
+
+    # Testo cifrato in formato esadecimale
+    ciphertext_hex = 'b7e9ac6...'
+    ciphertext = unhexlify(ciphertext_hex)
+
+    # Nonce in formato esadecimale
+    nonce_hex = '76c24201d...'
+    nonce = unhexlify(nonce_hex)
+
+    # Creare un oggetto ChaCha20
+    cipher = ChaCha20.new(key=key, nonce=nonce)
+
+    # Decifrare il testo cifrato
+    plaintext = cipher.decrypt(ciphertext)
+
+    # Stampa il testo in chiaro
+    print(plaintext.decode('utf-8'))
+\end{lstlisting}
+\subsection{Hash}
+\begin{lstlisting}[style=pythonStyle]
+    from Crypto.Hash import SHA256
+    from binascii import hexlify
+
+    # Testo in chiaro
+    plaintext = 'La lunghezza di questa frase non e divisibile per 8'
+
+    # Creare un oggetto SHA256
+    h = SHA256.new()
+
+    # Aggiornare l'hash con il testo in chiaro
+    h.update(plaintext.encode('utf-8'))
+
+    # Calcolare l'hash
+    digest = h.digest()
+
+    # Stampa l'hash in formato esadecimale
+    print(hexlify(digest).decode('utf-8'))
+\end{lstlisting}
+\subsection{RSA}
+L'algoritmo funziona con due primi $p$ e $q$ e un esponente pubblico $e$.
+L'algoritmo è il seguente:
+\begin{enumerate}
+    \item Calcolare $n = p \cdot q$
+    \item Calcolare $\phi(n) = (p-1)(q-1)$
+    \item Calcolare $d = e^{-1} \pmod{\phi(n)}$
+    \item La chiave pubblica è $(n, e)$, la chiave privata è $(n, d)$
+\end{enumerate}
+Per cifrare un messaggio $m$ si calcola $c = m^e \pmod{n}$, per decifrarlo si calcola $m = c^d \pmod{n}$.
+\begin{lstlisting}[style=pythonStyle]
+    p = 36652254321470221037
+    q = 31629674241453983353
+    e = 65537
+    n = p * q 
+    phi = (p - 1) * (q - 1)
+    d = pow (e, -1, phi)
+    print("n = ", n)
+
+    print("phi(n) = ", phi)
+
+    print("d = ", d)
+
+    stringa = "Stringa di prova"
+
+    numero = int(''.join(format(ord(char), '08b') for char in stringa), 2)
+
+    cifrato = pow(numero, d, n)
+
+    print("La stringa cifrata: ", cifrato)
+\end{lstlisting}
+\section{Aritmetica Modulare}
+
+Diciamo che $a \equiv b \pmod{n}$ se $n$ divide $a-b$.
+
+\begin{itemize}
+    \item $a \equiv b \pmod{n} \iff a \bmod{n} = b \bmod{n}$
+    \item $a \equiv b \pmod{n} \iff \exists k \in \mathbb{Z} \mid a = b + kn$
+    \item $a \equiv b \pmod{n} \iff \exists k \in \mathbb{Z} \mid a \bmod{n} = b + kn$
+\end{itemize}
+
+\subsection{Proprietà}
+
+\begin{itemize}
+    \item $a \equiv a \pmod{n}$
+    \item $a \equiv b \pmod{n} \implies b \equiv a \pmod{n}$
+    \item $a \equiv b \pmod{n} \land b \equiv c \pmod{n} \implies a \equiv c \pmod{n}$
+    \item $a \equiv b \pmod{n} \land c \equiv d \pmod{n} \implies a + c \equiv b + d \pmod{n}$
+    \item $a \equiv b \pmod{n} \land c \equiv d \pmod{n} \implies ac \equiv bd \pmod{n}$
+\end{itemize}
+
+\subsection{Aritmetica Modulare}
+
+La \emph{aritmetica modulare} è una branca dell'aritmetica che si
+occupa delle operazioni sui numeri interi modulari rispetto a un modulo
+dato. Un concetto fondamentale è il \emph{resto} di una divisione, spesso indicato come $a \mod m$, che rappresenta
+il residuo della divisione di $a$ per $m$.
+
+Un'applicazione comune dell'aritmetica modulare è nel calcolo del \emph{mcd} (massimo comune divisore) di due numeri.
+La funzione di Euclide è una tecnica classica che sfrutta l'aritmetica modulare per calcolare l'mcd. Ad esempio,
+se abbiamo due numeri $a$ e $b$, possiamo utilizzare la funzione di Euclide estesa per trovare i coefficienti di
+Bezout $x$ e $y$ tali che $a \cdot x + b \cdot y = \texttt{mcd}(a, b)$.
+
+\begin{equation}
+\texttt{gcd}(a, b) = ax + by
+\end{equation}
+
+In Python creiamo una funzione che calcola l'mcd di due numeri utilizzando la funzione di Euclide estesa.
+
+\begin{lstlisting}[style=pythonStyle]
+def gcd(a, b):
+    if a == 0:
+        return b, 0, 1
+    else:
+        g, y, x = gcd(b % a, a)
+        return g, x - (b // a) * y, y
+\end{lstlisting}
+
+Questo concetto è spesso applicato in crittografia, dove la sicurezza si basa su operazioni modulari e il teorema di Fermat.

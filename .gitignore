@@ -12,6 +12,9 @@ init_latex.py
 .vscode/
 .DS_Store
 
+Programmi/venv/
+
+
 # Mantieni la cartella img e il suo percorso completo
 !/**/img/
 *.pdf

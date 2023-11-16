@@ -39,6 +39,48 @@
 \usetikzlibrary{arrows.meta, backgrounds, chains, positioning, shapes.geometric, shapes.multipart}
 \tcbuselibrary{skins}
 \counterwithin{figure}{section}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+% Configurazione per Python
+\lstdefinestyle{pythonStyle}{
+    backgroundcolor=\color{white},
+    basicstyle=\footnotesize\ttfamily,
+    breaklines=true,
+    captionpos=b,
+    commentstyle=\color{mygreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{mygray},
+    numbers=left,
+    rulecolor=\color{black},
+    showstringspaces=false,
+    stringstyle=\color{mymauve},
+    tabsize=4,
+    language=Python
+}
+
+% Configurazione per Bash
+\lstdefinestyle{bashStyle}{
+    backgroundcolor=\color{white},
+    basicstyle=\footnotesize\ttfamily,
+    breaklines=true,
+    captionpos=b,
+    commentstyle=\color{mygreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{mygray},
+    numbers=left,
+    rulecolor=\color{black},
+    showstringspaces=false,
+    stringstyle=\color{mymauve},
+    tabsize=4,
+    language=Bash
+}
 %Nuovi comandi
 \newcommand\myeq{\stackrel{\mathclap{\normalfont\mbox{def}}}{=}}
 \newcommand\prodG{\stackrel{\mathclap{\normalfont\mbox{\tiny{G}}}}{\Longrightarrow}}
@@ -375,4 +417,5 @@ Connessione tramite tcp:
     \item \textbf{killall name} (termina tutti i processi con il nome che inizia per name)
 \end{itemize}
 
+\input{cryptography.tex}
 \end{document}
