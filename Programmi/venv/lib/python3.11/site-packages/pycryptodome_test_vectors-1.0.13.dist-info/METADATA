@@ -1,0 +1,22 @@
+Metadata-Version: 2.1
+Name: pycryptodome-test-vectors
+Version: 1.0.13
+Summary: Test vectors for PyCryptodome
+Home-page: https://www.pycryptodome.org
+Author: Helder Eijs
+Author-email: helderijs@gmail.com
+License: BSD, Apache
+Platform: Posix; MacOS X; Windows
+License-File: LICENSE.rst
+
+
+This package contains an extensive set of test vectors
+to verify the PyCryptodome cryptographic library.
+
+PyCryptdome can be installed with either the ``pycryptodome``
+package (``Crypto`` namespace) or
+the ``pycryptodomex`` package (``Cryptodome`` namespace).
+
+For more information, see the `homepage`_.
+
+.. _`homepage`: http://www.pycryptodome.org

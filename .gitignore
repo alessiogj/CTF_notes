@@ -12,5 +12,8 @@ init_latex.py
 .vscode/
 .DS_Store
 
+**/venv/
+
+
 # Mantieni la cartella img e il suo percorso completo
 !/**/img/
