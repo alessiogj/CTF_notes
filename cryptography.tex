@@ -232,6 +232,37 @@ del messaggio.
     # Stampa l'hash in formato esadecimale
     print(hexlify(digest).decode('utf-8'))
 \end{lstlisting}
+\subsection{RSA}
+L'algoritmo funziona con due primi $p$ e $q$ e un esponente pubblico $e$.
+L'algoritmo è il seguente:
+\begin{enumerate}
+    \item Calcolare $n = p \cdot q$
+    \item Calcolare $\phi(n) = (p-1)(q-1)$
+    \item Calcolare $d = e^{-1} \pmod{\phi(n)}$
+    \item La chiave pubblica è $(n, e)$, la chiave privata è $(n, d)$
+\end{enumerate}
+Per cifrare un messaggio $m$ si calcola $c = m^e \pmod{n}$, per decifrarlo si calcola $m = c^d \pmod{n}$.
+\begin{lstlisting}[style=pythonStyle]
+    p = 36652254321470221037
+    q = 31629674241453983353
+    e = 65537
+    n = p * q 
+    phi = (p - 1) * (q - 1)
+    d = pow (e, -1, phi)
+    print("n = ", n)
+
+    print("phi(n) = ", phi)
+
+    print("d = ", d)
+
+    stringa = "Stringa di prova"
+
+    numero = int(''.join(format(ord(char), '08b') for char in stringa), 2)
+
+    cifrato = pow(numero, d, n)
+
+    print("La stringa cifrata: ", cifrato)
+\end{lstlisting}
 \section{Aritmetica Modulare}
 
 Diciamo che $a \equiv b \pmod{n}$ se $n$ divide $a-b$.
