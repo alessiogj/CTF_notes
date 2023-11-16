@@ -127,10 +127,10 @@ Il formato \textbf{elf} è flessibile e serve a rappresentare i file binari, in 
 Per analizzare file ELF abbiamo alcuni strumenti tra cui:
 \begin{itemize}
   \item \textbf{readelf}: stampa le informazioni contenute nei file elf
-  \item textbf{nm}: stampa tutti i simboli contenuti nel file elf
-\item textbf{objdump}: stampa le informazioni contenute nel file oggetto, è più specifico rispetto a readelf
-\item textbf{lld}: stampa gli oggetti condivisi necessari all'esecuzione del programma
-\item textbf{lief}: libreria python per analizzare e modificare file elf.
+  \item \textbf{nm}: stampa tutti i simboli contenuti nel file elf
+\item \textbf{objdump}: stampa le informazioni contenute nel file oggetto, è più specifico rispetto a readelf
+\item \textbf{lld}: stampa gli oggetti condivisi necessari all'esecuzione del programma
+\item \textbf{lief}: libreria python per analizzare e modificare file elf.
 \end{itemize}
 
 \subsection{Memoria a basso livello}
@@ -138,20 +138,20 @@ Se vogliamo considerare un'astrazione della memoria troviamo vari livelli:
  \begin{itemize}
   \item \textbf{dati tipati}: byte interpretati
   \item linguaggi di programmazione
-\item textbf{memoria virtuale}: sequenza di byte indirizzabili, spazio indipendente per processo, solo alcune aree mappate(con la fisica)
+\item \textbf{memoria virtuale}: sequenza di byte indirizzabili, spazio indipendente per processo, solo alcune aree mappate(con la fisica)
 \item sistema operativo
-\item textbf{memoria fisica}: sequenza di byte indirizzabili
+\item \textbf{memoria fisica}: sequenza di byte indirizzabili
 \end{itemize}
 
 \subsection{Spazio virtuale linux user space}
 
  \begin{itemize}
   \item Text
-  \item Data -> dati globali inizializzati
-\item BSS -> dati globali azzerati
-\item Heap -> allocazioni dinamiche
-\item Librerie -> binari librerie dinamiche
-\item Stack -> var locali, record di attivazione
+  \item Data $\rightarrow$ dati globali inizializzati
+\item BSS $\rightarrow$ dati globali azzerati
+\item Heap $\rightarrow$ allocazioni dinamiche
+\item Librerie $\rightarrow$ binari librerie dinamiche
+\item Stack $\rightarrow$ var locali, record di attivazione
 \end{itemize}
 
 \subsection{metodologie di base di reverse}
@@ -250,6 +250,47 @@ Posso usare gdb in varie maniere:
 
 \end{itemize}
 
+\chapter{Strumenti di reverse engineering}
+
+\textit{Scritto da Seekbytes}
+
+Questo capitolo introduce il funzionamento tipico di strumenti di reverse engineering che analizzano binari per architetture general-purpose reali utilizzando linguaggi compilati. Salteremo tutto ciò che riguarda il reverse engineering di bytecode riferiti ad ISA virtuali: ad esempio il reverse engineering di programmi basati su \textbf{JVM} o \textbf{python byte code} dal momento che sono banali da reversare (ipotizzando, senza offuscamento).
+
+Tutti gli strumenti di reverse engineering hanno un unico obiettivo: \textbf{recuperare le informazioni di alto livello} di un programma (ovvero tutte quelle informazioni che il compilatore rimuove durante la fase di compilazione). Le informazioni di alto livello sono importanti per avere una rappresentazione più o meno veritiera di quello che esegue il programma (sostanzialmente, il codice "sorgente"). Ignorando tutte le informazioni formali relative all'analisi statica, possiamo individuare diverse fasi di quello che avviene dopo che si importa il file all'interno di Ghidra, IDA o Binary Ninja.  
+
+Nella prima parte di questo capitolo, utilizzeremo "strumenti di reverse engineering" per riferirci contemporaneamente a Ghidra, IDA o Binary Ninja perché sono sostanzialmente intercambiabili a livello di descrizione. Nella seconda parte invece introdurremo alcuni tips per identificare alcuni problemi dell'analisi statica e come poterli risolvere.
+
+\section{Passi dell'analisi dei programmi}
+
+Un qualsiasi programma dato in input agli strumenti di reverse engineering contengono principalmente due informazioni importanti: le istruzioni (cosa esegue la CPU) e i dati (su quali informazioni la CPU lavora). Queste informazioni contenute all'interno dei file binari sono posizionate con furbizia: il sistema operativo deve conoscere dove andare ad estrarre un certo tipo di informazioni. Quindi la soluzione più semplice è stata raggruppare una serie di informazioni "riassuntive" per dire al caricatore del sistema operativo dove andare per trovare, ad esempio, un tipo di dato.
+
+Per strutturare al meglio il file, sono nati i formati eseguibili e principalmente sono di tre tipi: ELF (per Unix-like), PE (per Windows M\$) e Mach-O (per macOS). I tre strumenti di reverse engineering sono compatibili con tutti e tre i formati eseguibili e le principali architetture (intel x86-64): funzionano molto bene su binari compilati e non linguaggi interpretati. 
+
+Capiamo meglio cosa succede quando importiamo il file:
+
+\begin{itemize}
+    \item \textbf{Lettura informazioni}: gli strumenti di reverse engineering devono sapere alcune informazioni sull'eseguibile come l'architettura target, come sono posizionate le informazioni (da quale indirizzo virtuale), individuazione della sezione relativa alle istruzioni e individuazione sezioni relative ai dati. Effettuano un parsing binario delle strutture e preparano una memoria virtuale dove sarà posizionato il programma come se fosse realmente eseguito da una CPU.
+    \item \textbf{Disassemblaggio delle istruzioni}: capendo l'architettura "target" del file eseguibile, gli strumenti di analisi trasformano una serie di byte arbitrari in istruzioni "leggibili" dagli umani, facendo riferimento alla strutture delle istruzioni assembly dell'ISA.
+    \item \textbf{Lifting}: gli strumenti di reverse engineering "astraggono"/"elevano l'informazione" applicando la fase di traduzione alle istruzioni disassemblate. Le istruzioni assembly dipendenti dall'architettura vengono trasformate in costrutti "universali" . Ogni strumento di reverse engineering adotta un linguaggio intermedio diverso (Ghidra utilizza \textit{SLEIGH}, Binary Ninja utilizza \textit{BLIL} e IDA \textit{IDA Microcode}), ma lo scopo è lo stesso: essere indipendenti dall'architettura.
+    \item \textbf{Costruzione del grafo del controllo di flusso}: suddivisione delle istruzioni in blocchi elementari o basic block e successiva costruzione del grafo del controllo di flusso per ogni funzione. Il grafo del controllo di flusso è molto importante per poter applicare le analisi al punto successivo (data-flow, context-sensitive, context-insensitive). 
+    \item \textbf{Applicazione di algoritmi di analisi}: svariati algoritmi sono applicati per poter inferire quante più informazioni di alto livello possibili. L'efficacia di questa operazione dipende principalmente dagli algoritmi implementati (diverse implementazioni per le tecniche di analisi) da parte degli strumenti di reverse engineering. Queste tecniche sono descritte in maggior dettaglio nella sottosezione, citiamo solo per esempio: la stack analysis, il loop recovery, il type inference. Il risultato finale è un codice pseudo-C che consente all'analista di capire molto bene come funziona il codice, ipotizzando di non avere offuscamenti.
+\end{itemize}
+
+Di seguito, scriviamo per ogni punto di analisi una descrizione per far capire meglio cosa si intende.
+
+\subsection{Lettura informazioni}
+
+La lettura delle informazioni consiste in un parsing di base che lo strumento di analisi effettua per poter applicare i successivi passi di analisi. Dobbiamo capire: il tipo di file, l'architettura, la composizione della memoria virtuale, come sono posizionate le sezioni, flag relative alla sezioni, entrypoint. Questa fase è principalmente legata alla sintassi e non c'è mai perdita di informazione. La stessa lettura delle informazioni viene effettuata da qualsiasi loader di un sistema operativo che deve caricare il file eseguibile in memoria.
+
+\subsection{Disassemblaggio delle istruzioni}
+
+\subsection{Lifting}
+
+Ad esempio, l'istruzione \textbf{LEA} in x86\_64 e l'istruzione \textbf{LDR} in ARM rappresentano la stessa operazione semantica: il caricamento di un determinato indirizzo in un certo registro. Avrebbe senso sviluppare due algoritmi di analisi diversi per la stessa operazione semantica? No. Quindi sia \textbf{LEA} che \textbf{LDR} vengono tradotte con \textbf{LOAD} che identifica una operazione più generica. Questo ci consente di essere \textbf{INDIPENDENTE DALL'ARCHITETTURA!} 
+
+\subsection{Costruzione del grafo del controllo di flusso}
+
+\subsection{Analisi}
 
 \chapter{Comandi terminale}
 \section{Introduzione}
