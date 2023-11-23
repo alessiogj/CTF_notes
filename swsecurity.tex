@@ -1,0 +1,204 @@
+\chapter{Software Security OlyCyber}
+\section{Introduzione}
+I numeri interi, in questo caso \texttt{int32}, possono essere rappresentati
+in due maniera, Big-Endian (\textit{cifra significativa a sinistra}) e
+Little-Endian (\textit{cifra significativa a destra}).
+\section{Assembly \texttt{x86\_64}}
+Ogni istruzione assembly ha degli operandi (\textit{registri}) e un'operazione.
+
+La notazione per architetture intel è del tipo  $\langle \texttt{op} \rangle
+\langle \texttt{destinazione} \rangle \langle \texttt{sorgente} \rangle$,
+i registri hanno la seguente struttura:
+$\texttt{AH},\texttt{AL} \rightarrow 8$ bit,
+$\texttt{AX} \rightarrow 16$ bit,
+$\texttt{EAX} \rightarrow 32$ bit,
+$\texttt{RAX} \rightarrow 64$ bit.
+
+Tra le operazioni di base che troviamo ci sono: 
+\begin{itemize}
+    \item $\texttt{MOV} \langle \texttt{dst}\rangle\langle \texttt{src}\rangle$
+    \item $\texttt{PUSH} \langle \texttt{src}\rangle$ oppure $\texttt{POP}\langle \texttt{src}\rangle$
+    \item $\texttt{ADD}$ oppure $\texttt{SUB} \langle \texttt{dst}\rangle\langle \texttt{src}\rangle$
+    \item $\texttt{CALL} \langle \texttt{pc}\rangle$ oppure $\texttt{RET}$
+\end{itemize}
+Tra i salti condizionali invece abbiamo:
+\begin{itemize}
+    \item $\texttt{CMP} \langle \texttt{opn1}_1\rangle\langle \texttt{opn}_2\rangle$: confronta due valori e imposta delle flag
+    \item $\texttt{J} \langle \texttt{condizione}\rangle\langle \texttt{pc}\rangle$: salta a PC se le flag soddisfano la condizione
+\end{itemize}
+\section{Buffer Overflow}
+Consideriamo di aver dichiarato in \texttt{C} un'istruzione del tipo ``\texttt{char name[100]};",
+cosa succede se l'utente ha un nome che supera i $100$ caratteri?.
+Può succedere che con \texttt{scanf()} andiamo a scrivere caratteri oltre la fine di name,
+andando a sovrascrivere la memoria che lo segue, generando quindi un \textit{buffer overflow}
+che va a corrompere la memoria, ossia scriviamo dati in posizioni che il programmatore non
+aveva previsto fossero modificate.
+
+Se corrompiamo abbastanza bene la memoria possiamo addirittura prendere il controllo del
+processo (\textit{arbitrary code execution}).
+\subsection{Accessi out of bound}
+Se abbiamo una \texttt{struct} che dichiara un \texttt{int a[2]} e un \texttt{int b[3]},
+nel momento in cui scrivo in \texttt{a[2]} o in \texttt{b[0]} non cambia niente,
+sono equivalenti.
+\section{Reverse Engineering}
+\subsection{Binary}
+Gli eseguibili nativi sono file che contengono codice macchina eseguibile dal
+processore, contengono anche informazioni usate dal sistema operativo per caricarlo
+in memoria.
+
+Il formato \texttt{.elf} è flessibile e serve a rappresentare i file binari,
+in linux è usato per rappresentare eseguibili e librerie condivise, ad alto livello
+invece risulta come un insieme di strutture che descrivono come caricare in memoria
+i dati salvati nello stesso file.
+
+Per analizzare file \texttt{ELF} abbiamo alcuni strumenti tra cui:
+\begin{itemize}
+    \item \texttt{readelf}: stampa le informazioni contenute nei file \texttt{.elf}
+    \item \texttt{nm}: stampa tutti i simboli contenuti nel file \texttt{.elf}
+    \item \texttt{objdump}: stampa le informazioni contenute nel file oggetto, è più specifico rispetto a readelf
+    \item \texttt{lld}: stampa gli oggetti condivisi necessari all'esecuzione del programma
+    \item \texttt{lief}: libreria python per analizzare e modificare file \texttt{.elf}.
+\end{itemize}
+
+\subsection{Memoria a basso livello}
+Se vogliamo considerare un'astrazione della memoria troviamo vari livelli:
+ \begin{itemize}
+  \item \textbf{dati tipati}: byte interpretati
+  \item linguaggi di programmazione
+    \item textbf{memoria virtuale}: sequenza di byte indirizzabili, spazio indipendente per processo, solo alcune aree mappate(con la fisica)
+    \item sistema operativo
+    \item textbf{memoria fisica}: sequenza di byte indirizzabili
+\end{itemize}
+
+\subsection{Spazio virtuale linux user space}
+
+\begin{itemize}
+    \item \texttt{Text} $\rightarrow$ codice eseguibile
+    \item \texttt{Data} $\rightarrow$ dati globali inizializzati
+    \item \texttt{BSS} $\rightarrow$ dati globali azzerati
+    \item \texttt{Heap} $\rightarrow$ allocazioni dinamiche
+    \item \texttt{Librerie} $\rightarrow$ binari librerie dinamiche
+    \item \texttt{Stack} $\rightarrow$ var locali, record di attivazione
+\end{itemize}
+
+\subsection{metodologie di base di reverse}
+I più famosi tool per analisi statica sono
+\textit{Ghidra, IDA, Binary Ninja,
+Radare2} e servono per analizzare il codice binario. 
+
+\begin{itemize}
+\item \texttt{JADX}: reverse bytecode \texttt{java}
+\item \texttt{dnSpy}, \texttt{ILSpy}: reverse bytecode \texttt{.NET}
+\item \texttt{uncompyle6/unpyc}: reverse bytecode \texttt{python}
+\item \texttt{Iuadec}: reverse bytecode \texttt{LUA}.
+\end{itemize}
+Tool per analisi dinamica:
+\begin{itemize}
+\item \texttt{gdb}: da usare con \texttt{GEF} o \texttt{PWNDBG}
+\item \texttt{radare2} integra features comode per il reversing
+\item rr timeless debugging
+\item \texttt{frida}: inietta codice js in qualsiasi punto del programma
+\item \texttt{ida}: debugger gui disponibile free.
+\end{itemize}
+\chapter{Software Security}
+\section{Elf File}
+È il file standard per gli eseguibili \texttt{UNIX}, \texttt{Elf} sta per
+Executable and Linkable Format, è essenzialmente un file binario che
+contiene varie informazioni tra cui:
+\begin{itemize}
+	\item \textbf{header}: descrive il contenuto del file per l'esecuzione
+	\item \textbf{Pht (program header table)}: da informazioni su come si crea
+    l'immagine del processo
+	\item \textbf{Sequenza di sezioni}: contengono ciò che serve per il linking
+	\item \textbf{Section header table}: descrizione delle sezioni precedenti 
+\end{itemize}
+Per Windows l'equivalente è PE, per Mac Mach-O.
+\section{Memoria}
+\subsection{Storage Size}
+\begin{itemize}
+    \item \texttt{WORD}: $2$ bytes;
+    \item \texttt{DWORD}: $4$ bytes;
+    \item \texttt{QWORD}: $8$ bytes;
+\end{itemize}
+La cifra più significativa è a sinistra, quella meno è a destra.
+\subsection{Hexadecimal}
+Si usa come forma compatta dei numeri binari, si va da $0$ a $9$ e da $A$ a $F$.
+Ogni digit in hex rappresenta $4$ bits, quindi $2$ digit un bytes,
+in \texttt{C} sono scritti come \texttt{0XFA1D}...
+
+\subsection{Registri \texttt{x86\_32}}
+Ha registri general purpose a 32 bit. Sono strutturati
+nella seguente maniera: AH,AL 8 bit ciascuno, AX 16 bit,
+\texttt{EAX} $32$ bit. EAX è storicamente usato come accumulatore,
+\texttt{ECX} come counter, inoltre ci sono \texttt{ESP} (\textit{stack pointer}) e
+EBP (\textit{base pointer}). Se passiamo a \texttt{x86\_64} 
+si aggiungono i
+registri a 64 bit che si nominano del tipo: \texttt{RAX}.
+
+\subsection{x86 Memory Management}
+La memoria è semplicemente una sequenza di bytes,
+ognuno con un indirizzo unico. I compilatori potrebbero
+introdurre padding per cambiare l'ordine dei dati per ottimizzare,
+per questo motivo ci torna comodo vederla come una matrice di tot
+righe con n bytes (n=processor word), se sono a 64 bit n=8. Un
+indirizzo è una locazione in memoria, un \textbf{puntatore} è un
+oggetto che mantiene un indirizzo. I bytes possono essere ordinati
+in memoria in due maniere:
+\begin{itemize}
+\item \textbf{Big-Endian}: il byte meno significativo ha indirizzo più alto
+\item \textbf{Little-Endian}: il byte meno significativo ha indirizzo più basso
+\end{itemize}
+
+\section{Intel x86 Instruction Set}
+La notazione per architetture Intel è del tipo $\langle op\rangle \langle
+destinazione\rangle\langle sorgente\rangle$. Vediamo ora alcune istruzioni:
+\begin{itemize}
+\item \texttt{mov}: muove dati da un src a un registro dst
+\item \texttt{push}: mette l'operando sullo stack
+\item \texttt{pop}: rimuove l'operando dallo stack
+\item \texttt{lea}: carica ciò che c'è all'indirizzo [] in dst
+\item \texttt{add}: fa la somma e salva in op1
+\item \texttt{sub}: fa la differenza e salva in op1
+\item \texttt{inc}: incrementa di 1
+\item \texttt{and/or/xor}: fa l'operazione e salva in op1
+\item \texttt{jump}: salto non condizionale a label
+\item \texttt{cmp}: compara contenuto di op1 con op2
+\item \texttt{je/jne/jz/jg/jge/jl/jle}: in base a cmp fa salto condizionale 
+\item \texttt{call}: usato per chiamare funzioni
+\item \texttt{ret}: implementa il ritorno da funzione
+\end{itemize}
+
+Per quanto riguarda lo stack, questo è formato da degli stack frames, uno per ogni funzione chiamata. Il \textbf{stack pointer} punta all'ultimo elemento nello stack (il primo inserito). Per quanto riguarda ogni singolo frame, abbiamo che il \textbf{base pointer (frame pointer)} punta all'indirizzo dal quale partono le variabili locali.
+
+\section{Debugging con GDB}
+Posso usare gdb in varie maniere:
+\begin{itemize}
+\item $\texttt{gdb} \langle program \rangle$
+\item $\texttt{gdb} \langle program \rangle \langle pid \rangle $
+\item $\texttt{gdb -p} \langle pid \rangle$
+\end{itemize}
+
+\subsection{Comandi di GDB}
+\begin{itemize}
+\item \texttt{run}: fa partire il programma in gdb
+\item \texttt{set args}: imposta gli argomenti del programma
+\item \texttt{show args}: mostra gli argomenti del programma
+\item \texttt{help}: comandi disponibili
+\item \texttt{break}: mette breakpoint alla prossima istruzione
+\item \texttt{break location}: mette un breakpoint alla locazione location(preceduta da *)
+\item $\texttt{break} [\texttt{location}] \texttt{if}
+\langle \texttt{condition} \rangle$: mette un breakpoint data una condizione
+\item \texttt{continue(c)}: va al prossimo breakpoint(se esiste)
+\item \texttt{nexti(ni)}: esegue solo un'istruzione
+\item $\texttt{frame} [\langle \texttt{selection} \rangle]$:
+stampa una descrizione dello stack frame selezionato
+\item $\texttt{info frame} [\langle \texttt{selection} \rangle]$:
+stampa una descrizione più informativa rispetto a frame
+\item \texttt{disas}: disassembla una funzione
+\item \texttt{print(p)}: stampa il contenuto di un indirizzo o
+registro(\texttt{*0x092A3E} o \texttt{\$EAX})  
+\item \texttt{x}: non ho ben capito
+\item \texttt{call}: chiama una funzione 
+\item \texttt{set}: modifica il valore di una locazione di memoria o di un registro
+
+\end{itemize}
