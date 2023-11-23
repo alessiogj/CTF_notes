@@ -44,28 +44,27 @@ def estrai_testo_dalla_pagina(url_pagina):
 def main():
     for _ in range(100):
         testo_pagina = estrai_testo_dalla_pagina(url_html)
-        if testo_pagina:
+        page = urllib2.urlopen(url_html)
+        soup = BeautifulSoup(page,features="html.parser")
+        tags=soup.findAll('img')
+        print(f"Tag immagine: {tags}")
+        url_immagine = tags[0]['src']
+        print(f"URL immagine: {url_immagine}")
+        testo_estratto = estrai_testo_da_immagine(url_immagine)
+        print(testo_estratto)
+        #if tags:
+            #
+          #  
 
-            page = urllib2.urlopen(url_html)
-            soup = BeautifulSoup(page)
-            tags=soup.findAll('img')
-            print(f"Tag immagine: {tags}")
-            if tags:
-                url_immagine = tags[0]['src']
-                print(f"URL immagine: {url_immagine}")
-                testo_estratto = estrai_testo_da_immagine(url_immagine)
-
-                if testo_estratto:
-                    print(f"Testo estratto dall'immagine: {testo_estratto}")
-                    response = session.post(url_html, data={'input': testo_estratto, 'next': 'Next'})
-                else:
-                    print("Errore nell'estrazione del testo dall'immagine.")
-        else:
-            print("Errore nell'estrazione del testo dalla pagina HTML.")
+         #   if testo_estratto:
+       #         print(f"Testo estratto dall'immagine: {testo_estratto}")
+        #        response = session.post(url_html, data={'input': testo_estratto, 'next': 'Next'})
+      #      else:
+     #           print("Errore nell'estrazione del testo dall'immagine.")
 
     # Stampa il cookie di sessione alla fine dei 100 cicli
-    cookie_di_sessione = session.cookies.get_dict()
-    print(f"\nCookie di sessione alla fine dei 100 cicli: {cookie_di_sessione}")
+    # cookie_di_sessione = session.cookies.get_dict()
+    #print(f"\nCookie di sessione alla fine dei 100 cicli: {cookie_di_sessione}")
 
 if __name__ == "__main__":
     main()
